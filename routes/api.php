@@ -32,6 +32,12 @@ Route::middleware('auth:sanctum')->get('/your-blogs', [BlogController::class, 'y
 
 Route::post('/blogs/views/{blog_id}', [BlogController::class, 'incrementView'])->name('increment-views');
 
+// Notifications API
+
+Route::middleware('auth:sanctum')->get('/notifications', [BlogController::class, 'getNotifications'])->name('get-notifications');
+Route::middleware('auth:sanctum')->post('/blogs/status/{id}', [BlogController::class, 'updateStatus'])->name('update-blog-status');
+
+
 // Comments API
 
 Route::get('/comments/{blog_id}', [CommentController::class, 'show'])->name('show-comments');

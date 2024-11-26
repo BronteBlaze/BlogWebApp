@@ -10,6 +10,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\File;
 use Illuminate\Validation\ValidationException;
+use App\Notifications\BlogSubmittedNotification;
+use App\Notifications\BlogStatusNotification;
 
 class BlogController extends Controller
 {
@@ -61,7 +63,11 @@ class BlogController extends Controller
             $blog = Blog::create($validatedData);
             $blog->image = $request->hasFile('image') ? asset('storage/' . $imagePath) : null;
 
+            $admin = User::where('role', 'superadmin')->first();
+            $admin->notify(new BlogSubmittedNotification($blog));
+
             return response()->json([
+                'message' => 'Blog submitted successfully!',
                 'blog' => $blog
             ], 201);
         } catch (Exception $e) {
@@ -286,6 +292,42 @@ class BlogController extends Controller
             }
             $blog->increment('views');
             return response()->json(['message' => 'View incremented successfully', 'views' => $blog->views]);
+        } catch (Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 500);
+        }
+    }
+
+    public function getNotifications() {
+        try {
+            $user = auth('sanctum')->user();
+    
+            if (!$user) {
+                return response()->json(['message' => 'Unauthorized'], 401);
+            }
+            // Fetch all notifications for the user
+            $notifications = $user->notifications;
+    
+            return response()->json($notifications);
+        } catch (Exception $e) {
+            return response()->json(['message' => $e->getMessage()], 500);
+        }
+    }
+    
+
+    public function updateStatus(Request $request, $id)
+    {
+        try {
+            $blog = Blog::findOrFail($id);
+            $blog->status = $request->status; // 'approved' or 'rejected'
+            $blog->save();
+    
+            // Notify User
+            $user = User::findOrFail($blog->author_id);
+    
+            // Send notification
+            $user->notify(new BlogStatusNotification($blog, $blog->status));
+    
+            return response()->json(['message' => 'Blog status updated successfully.']);
         } catch (Exception $e) {
             return response()->json(['message' => $e->getMessage()], 500);
         }
