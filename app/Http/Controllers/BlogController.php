@@ -64,7 +64,7 @@ class BlogController extends Controller
             $blog->image = $request->hasFile('image') ? asset('storage/' . $imagePath) : null;
 
             $admin = User::where('role', 'superadmin')->first();
-            $admin->notify(new BlogSubmittedNotification($blog));
+            $admin->notify(new BlogSubmittedNotification($blog, $validatedData['author_id']));
 
             return response()->json([
                 'message' => 'Blog submitted successfully!',
@@ -300,16 +300,29 @@ class BlogController extends Controller
     public function getNotifications() {
         try {
             $user = auth('sanctum')->user();
-            $full_name = $user->first_name." ".$user->last_name;
             if (!$user) {
                 return response()->json(['message' => 'Unauthorized'], 401);
             }
-            // Fetch all notifications for the user
-            $notifications = $user->notifications()->where('notifiable_id', $user->id)->get();
 
-            Log::info($notifications);
+            $full_name = "";
+
+            $notifications = $user->notifications()->where('notifiable_id', $user->id)->get();
+            $notificationsWithUsernames = $notifications->map(function ($notification) {      
+                $userId = $notification->data['user_id'] ?? null;
+        
+                $userWhoPost = User::find($userId);
+
+                $full_name = $userWhoPost->first_name." ".$userWhoPost->last_name;
+                
+                $data = $notification->data;
+                $data['username'] = $full_name;
+                $notification->data = $data;
+
+                return $notification;
+            });
+            // Fetch all notifications for the user
     
-            return response()->json(['notifications' => $notifications, 'username' => $full_name]);
+            return response()->json(['notifications' => $notificationsWithUsernames]);
         } catch (Exception $e) {
             return response()->json(['message' => $e->getMessage()], 500);
         }

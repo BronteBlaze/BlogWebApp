@@ -6,19 +6,22 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Support\Facades\Log;
 
 class BlogSubmittedNotification extends Notification
 {
     use Queueable;
 
     private $blog;
+    private $userId;
 
     /**
      * Create a new notification instance.
      */
-    public function __construct($blog)
+    public function __construct($blog, $userId)
     {
         $this->blog = $blog;
+        $this->userId = $userId;
     }
 
     /**
@@ -51,7 +54,8 @@ class BlogSubmittedNotification extends Notification
     {
         return [
             'message' => 'A new blog has been submitted: '.$this->blog->title,
-            'blog_id' => $this->blog->id
+            'blog_id' => $this->blog->id,
+            'user_id' => $this->userId
         ];
     }
 }
