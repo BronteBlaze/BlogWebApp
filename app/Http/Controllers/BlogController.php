@@ -20,7 +20,7 @@ class BlogController extends Controller
      */
     public function index()
     {
-        return Blog::orderBy('created_at', 'desc')->paginate(8);
+        return Blog::where('status', 'approved')->orderBy('created_at', 'desc')->paginate(8);
     }
 
     /**
@@ -300,14 +300,16 @@ class BlogController extends Controller
     public function getNotifications() {
         try {
             $user = auth('sanctum')->user();
-    
+            $full_name = $user->first_name." ".$user->last_name;
             if (!$user) {
                 return response()->json(['message' => 'Unauthorized'], 401);
             }
             // Fetch all notifications for the user
-            $notifications = $user->notifications;
+            $notifications = $user->notifications()->where('notifiable_id', $user->id)->get();
+
+            Log::info($notifications);
     
-            return response()->json($notifications);
+            return response()->json(['notifications' => $notifications, 'username' => $full_name]);
         } catch (Exception $e) {
             return response()->json(['message' => $e->getMessage()], 500);
         }

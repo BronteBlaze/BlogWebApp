@@ -5,6 +5,7 @@ use App\Http\Controllers\CommentController;
 use App\Http\Controllers\LikeController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Middleware\checkRole;
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
     return $request->user();
